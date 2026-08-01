@@ -9,3 +9,6 @@ __pycache__/
 /supabase/functions/*.npmrc
 /supabase/config.toml
 /supabase/deno.json
+node_modules/
+/supabase/.temp/
+**/supabase/functions/**/.npmrc
