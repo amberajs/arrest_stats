@@ -1,5 +1,5 @@
 .env
-venv/
+.venv/
 __pycache__/
 *.pyc
 /scraper_worker/scraper_worker_setup/
@@ -12,3 +12,5 @@ repo_bundle.txt
 /supabase/functions/jail_parser/.npmrc
 /supabase/functions/inmate_parser/.npmrc
 /supabase/migrations/*
+config.toml
+deno.json
