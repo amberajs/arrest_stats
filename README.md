@@ -15,32 +15,40 @@ Priorities:
 3) Data Integrity: strict database definitions
 4) Audit Trail: keeping untouched, raw json and hash value of each source 
 
+```mermaid
 graph TD
-  %% Core Nodes
   arrest_stats["arrest_stats/"]
   scraper["scraper/"]
   supabase["supabase/"]
   functions["functions/"]
   format_data["format_data/"]
   migrations["migrations/"]
+  scraper_py["scraper.py"]
+  requirements_txt["requirements.txt"]
+  index_ts["index.ts"]
+  timestamp_sql["{timestamp}.init.sql"]
+  readme_md["README.md"]
+  changelog_md["changelog.md"]
+  gitignore[".gitignore"]
 
-  %% Files & Folders Links
   arrest_stats --> scraper
-  scraper --> scraper.py
-  scraper --> requirements.txt
+  scraper --> scraper_py
+  scraper --> requirements_txt
   
   arrest_stats --> supabase
   supabase --> functions
   
   functions --> format_data
-  format_data --> index.ts
+  format_data --> index_ts
   
   functions --> migrations
-  migrations --> timestamp["{timestamp}.init.sql"]
+  migrations --> timestamp_sql
   
-  arrest_stats --> README.md
-  arrest_stats --> changelog.md
-  arrest_stats --> .gitignore
+  arrest_stats --> readme_md
+  arrest_stats --> changelog_md
+  arrest_stats --> gitignore
+```
+
 
 Current Design Plan:
 EXTRACT
