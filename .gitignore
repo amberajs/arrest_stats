@@ -6,7 +6,6 @@ __pycache__/
 *.npmrc
 /scraper/.venv/
 /supabase/.temp/
-/supabase/functions/*/.npmrc
-/supabase/migrations/*
+/supabase/functions/*.npmrc
 /supabase/config.toml
 /supabase/deno.json
