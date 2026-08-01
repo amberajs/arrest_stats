@@ -15,25 +15,35 @@ Priorities:
 3) Data Integrity: strict database definitions
 4) Audit Trail: keeping untouched, raw json and hash value of each source 
 
+graph TD
+  %% Core Nodes
+  arrest_stats["arrest_stats/"]
+  scraper["scraper/"]
+  supabase["supabase/"]
+  functions["functions/"]
+  format_data["format_data/"]
+  migrations["migrations/"]
 
-```mermaid
-treeView-beta
-arrest_stats/
-  README.md
-  scraper/
-    scraper.py
-    requirements.txt
-  supabase/
-    functions/
-      format_data/
-        index.ts
-      migrations/
-        {timestamp}.init.sql
-   changelog.md
-  .gitignore
-```
+  %% Files & Folders Links
+  arrest_stats --> scraper
+  scraper --> scraper.py
+  scraper --> requirements.txt
+  
+  arrest_stats --> supabase
+  supabase --> functions
+  
+  functions --> format_data
+  format_data --> index.ts
+  
+  functions --> migrations
+  migrations --> timestamp["{timestamp}.init.sql"]
+  
+  arrest_stats --> README.md
+  arrest_stats --> changelog.md
+  arrest_stats --> .gitignore
 
-Current Design Plan: ???????????redo this with ELT order??????
+Current Design Plan:
+EXTRACT
 1) scraper.py (worker node)
 - cron schedule once per hour or on command (import schedule)
 - save last_scrape_time from last completed run (confirmed when it receives 200 status from supabase)
@@ -47,15 +57,31 @@ Current Design Plan: ???????????redo this with ELT order??????
 - for inmates[] scrape url=INMATE_BASE_API{inmate_id}/
 - generate hash_value for inmate
 - inmate_object(raw_json, hash_value, current timestamp)
-- supabase post inmate_array (auth headers)
+- supabase post inmate_array to db raw_arrests table(auth headers)
 - supabase response
-- if 200: save current time and recents hash_value ot last_scrape_time and last_hash_value, print completed at {time}
+- if 200: save current time and recents hash_value to last_scrape_time and last_hash_value, print completed at {time}
 - if not 200: print error: {supabase response}
-2) write to database
-- receives inmates_array from scraper.py
+2) requirements.txt (pip install for scraper.py)
+LOAD
+1) table creation
+- raw data and hash
+- lookup tables (1:N nullable relationships)
+- inmate profiles
+- agency/officer profiles
+- incomplete arrest records (bitmask lookup)
+- arrests
+- anonymized table for database queries
+2) allow scraper.py to insert array object
+- receives inmates_array from scraper.py (verify sender and content)
 - immediately inserts to raw_arrests table (primary key, raw_json, hash_value, scraped_at)
-3) new_arrest_trigger (db trigger)
-- wakes inmate_parser up when new row is added to raw_arrests
-4) format_data (edge function)
-- parse raw_arrests data, format for arrests table 
-5) lookup tables and relationships
+TRANSFORM
+1) new_arrest_trigger (db trigger)
+- wakes format_data up when new row is added to raw_arrests
+2) format_data (edge function)
+- parse raw_arrests data
+- format for arrests table
+- insert
+3) anonymization step to protect the public facing table
+- specifics tbd
+4) build frontend tool for data querying
+- specifics tbd
