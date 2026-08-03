@@ -5,6 +5,7 @@ __pycache__/
 *.temp
 *.npmrc
 /scraper/.venv/
+/scraper/last_hash.txt
 /supabase/.temp/
 /supabase/functions/*.npmrc
 /supabase/config.toml
