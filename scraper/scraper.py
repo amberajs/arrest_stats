@@ -3,7 +3,8 @@ import json
 import os
 import random
 import time
-
+import re
+from datetime import datetime
 from dotenv import load_dotenv
 import requests
 import schedule
@@ -28,7 +29,7 @@ JAIL_HEADERS = {
 }
 
 FILENAME = "last_hash.txt"
-
+last_time = None
 
 def scrape_jail():
     """Fetches recent inmate list JSON from the jail API."""
@@ -56,11 +57,13 @@ def generate_hash(data):
 
 def get_last_hash(filename=FILENAME):
     """Reads previous hash from local file."""
+    global last_time
     if os.path.exists(filename):
         with open(filename, "r") as f:
-            return f.read().strip()
+            time_raw = os.path.getmtime(filename)
+            last_time = datetime.fromtimestamp(time_raw)
+            return (f.read().strip())
     return ""
-
 
 def save_success(new_hash, filename=FILENAME):
     """Saves the hash to file only after successful run."""
@@ -68,13 +71,11 @@ def save_success(new_hash, filename=FILENAME):
         f.write(new_hash)
     print(f"Saved new hash: {new_hash}")
 
-
 def get_list(data):
     """Extracts inmate IDs from main jail payload."""
     if not data:
         return None
     return [inmate["inmateID"] for inmate in data if "inmateID" in inmate]
-
 
 def scrape_inmate(inmate_id):
     """Fetches details for an individual inmate ID."""
@@ -93,6 +94,24 @@ def scrape_inmate(inmate_id):
         print(f"{inmate_id} An unexpected error occurred: {err}")
     return None
 
+def filter_inmate(raw_data):
+    if last_time is None:
+        return True
+    try:
+        latest_label = None
+        profile_images = raw_data.get("profileImages", [])
+        if profile_images and isinstance(profile_images, list):
+            latest_label = profile_images[0].get("label")
+        if latest_label:
+            dt_object = datetime.fromisoformat(latest_label)
+            return dt_object > last_time
+        booking_date_str = raw_data.get("inmate", {}).get("bookingDate")
+        if booking_date_str:
+            dt_object = datetime.strptime(booking_date_str, "%m/%d/%Y")
+            return dt_object > last_time
+        return True
+    except Exception as e:
+        return True
 
 def run_all():
     """Main execution block."""
@@ -105,7 +124,7 @@ def run_all():
     last_hash = get_last_hash()
 
     if current_hash == last_hash:
-        print("Data has not changed since last run. Exiting early.")
+        print("No data change. Exiting early.")
         return
 
     print("Getting inmate list.")
@@ -118,7 +137,9 @@ def run_all():
     records_to_upsert = []
     for inmate_id in inmate_list:
         raw_data = scrape_inmate(inmate_id)
-        if raw_data:
+        is_new = filter_inmate(raw_data)
+        if is_new:
+            print(f"New inmate:{inmate_id}")
             hash_val = generate_hash(raw_data)
             records_to_upsert.append(
                 {

@@ -8,4 +8,17 @@ changelog
 
 ### Changed
 - scraper.py to use hash checks before database bulk insert to raw_payload_log
-- last_hash.txt (from scraper.py changes) now listed on .gitignore
+
+
+## 2026-08-04
+
+### Added
+- new migrations init with database triggers for format_data edge function on every new row in raw_payload_log
+- new migrations init with rpc for format_data table inserts, also removed bitmask logic
+
+### Changed
+- requirements.txt to reflect previous changes to scraper.py
+- format_data/index.ts to format raw json from raw_payload_log table and insert to arrests table
+- config.toml to remove old edge function names and replace with format_data
+- scraper.py to filter pre-existing arrests before upsert
+

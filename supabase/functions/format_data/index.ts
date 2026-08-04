@@ -1,46 +1,105 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Setup type definitions for built-in Supabase Runtime APIs
-import "@supabase/functions-js/edge-runtime.d.ts";
-import { withSupabase } from "@supabase/server";
+const cleanStr = (val?: string): string | undefined =>
+  val?.trim() ? val.trim().toUpperCase() : undefined;
 
-console.log("Hello from Functions!");
+function parseDOB(dob?: string): string | undefined {
+  const match = dob?.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  return match ? `${match[3]}-${match[1]}-${match[2]}` : undefined;
+}
 
-// This endpoint uses 'publishable' | 'secret' access, apiKey is required.
-// Use publishable for Client-facing, key-validated endpoints
-// Use secret for Server-to-server, internal calls
-export default {
-  fetch: withSupabase({ auth: ["publishable", "secret"] }, async (req, ctx) => {
-    // Called by another service with a secret key
-    // ctx.supabaseAdmin bypasses RLS — use for privileged operations
-    /*
-    if (ctx.authMode === "secret") {
-      const { user_id } = await req.json();
-      const { data } = await ctx.supabaseAdmin.auth.admin.getUserById(user_id);
+function parseImageSource(source?: string) {
+  if (!source) return { arrestId: null, bookingTime: null };
 
-      return Response.json({
-        email: data?.user?.email,
+  const match = source.match(/(\d+)_(\d{14})\.jpg$/i);
+  if (!match) return { arrestId: null, bookingTime: null };
+
+  const [, idStr, ts] = match;
+  const bookingTime = `${ts.slice(4, 8)}-${ts.slice(0, 2)}-${ts.slice(2, 4)}T${
+    ts.slice(8, 10)
+  }:${ts.slice(10, 12)}:${ts.slice(12, 14)}`;
+
+  return {
+    arrestId: parseInt(idStr, 10) || null,
+    bookingTime,
+  };
+}
+
+Deno.serve(async (req) => {
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
       });
     }
-    */
+    const body = await req.json();
+    const record = body?.record ?? body ?? {};
+    const rawData = record?.raw_json ?? record;
 
-    const { name } = await req.json();
+    const rawInmate = rawData?.inmate || {};
+    const rawOffenses = Array.isArray(rawData?.offenses)
+      ? rawData.offenses
+      : [];
+    const profileImages = Array.isArray(rawData?.profileImages)
+      ? rawData.profileImages
+      : [];
 
-    return Response.json({
-      message: `Hello ${name}!`,
+    const payloadId = record?.payload_id ?? null;
+    const { arrestId, bookingTime } = parseImageSource(
+      profileImages[0]?.source,
+    );
+
+    const chargesSet = new Set<string>();
+    for (const off of rawOffenses) {
+      const clean = cleanStr(off?.chargeDescription);
+      if (clean) chargesSet.add(clean);
+    }
+    const charges = chargesSet.size > 0 ? Array.from(chargesSet) : undefined;
+
+    const recordItem = {
+      payload_id: payloadId,
+      arrest_id: arrestId,
+      booking_time: bookingTime,
+      inmate_id: rawInmate.inmateID ? Number(rawInmate.inmateID) : undefined,
+      first_name: cleanStr(rawInmate.firstName),
+      middle_name: cleanStr(rawInmate.middleName),
+      last_name: cleanStr(rawInmate.lastName),
+      dob: parseDOB(rawInmate.dob),
+      arresting_location: cleanStr(rawInmate.arrestingLocation),
+      arrest_agency: cleanStr(rawInmate.arrestAgency),
+      arresting_officer: cleanStr(rawInmate.arrestingOfficer),
+      race: cleanStr(rawInmate.race),
+      sex: cleanStr(rawInmate.sex),
+      height: rawInmate.height,
+      weight: rawInmate.weight,
+      charges,
+    };
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    );
+
+    const { data, error } = await supabaseClient.rpc("process_arrest_payload", {
+      records_json: [recordItem],
     });
-  }),
-};
 
-/* To invoke locally:
+    if (error) throw error;
 
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/format_data' \
-    --header 'apiKey: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH' \
-    --data '{"name":"Functions"}'
-
-*/
+    return new Response(
+      JSON.stringify({
+        status: "SUCCESS",
+        count: data?.[0]?.inserted_count,
+        record: recordItem,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({ error: err?.message || String(err) }),
+      { status: 400, headers: { "Content-Type": "application/json" } },
+    );
+  }
+});
