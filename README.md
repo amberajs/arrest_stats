@@ -2,7 +2,7 @@ README
 
 ACTIVE DEVELOPMENT
 
-*Arrest Stats is a work in progress. Recent work has focused on the data pipeline.*
+*Arrest Stats is a work in progress. Recent work has focused on data validation.*
 
 Purpose:
 1) Create a defensible data pipeline that handles local arrest records through an entire ELT process.
@@ -33,8 +33,9 @@ graph TD
 
   arrest_stats --> scraper
   scraper --> scraper_py
+  scraper --> other_scraper_py
   scraper --> requirements_txt
-  
+
   arrest_stats --> supabase
   supabase --> functions
   
@@ -42,7 +43,8 @@ graph TD
   format_data --> index_ts
   
   functions --> migrations
-  migrations --> timestamp_sql
+  migrations --> timestamp_init_sql
+  migrations --> timestamp_snapshot_sql
   
   arrest_stats --> readme_md
   arrest_stats --> changelog_md
@@ -74,9 +76,8 @@ LOAD
 1) table creation
 - raw data and hash
 - lookup tables (1:N nullable relationships)
-- inmate profiles
+- inmate profiles and names
 - agency/officer profiles
-- incomplete arrest records (bitmask lookup)
 - arrests
 - anonymized table for database queries
 2) allow scraper.py to insert array object
@@ -89,7 +90,9 @@ TRANSFORM
 - parse raw_arrests data
 - format for arrests table
 - insert
-3) anonymization step to protect the public facing table
+3) data validity tests
+- VisiData and Soda Core (to enforce guardrails)
+4) anonymization step to protect the public facing table
 - specifics tbd
-4) build frontend tool for data querying
-- specifics tbd
+5) build frontend tool for data querying
+- Export for frontend: Duck DB? or Python?

@@ -46,14 +46,10 @@ def scrape_jail():
         print(f"An unexpected error occurred: {err}")
     return None
 
-
-def generate_hash(data):
-    """Generates an MD5 hash string from a JSON object/dict."""
-    if data is None:
-        return None
-    payload_bytes = json.dumps(data, sort_keys=True).encode("utf-8")
-    return hashlib.md5(payload_bytes).hexdigest()
-
+def generate_hash(data) -> str:
+    """Generates a single SHA-256 hash from the combined batch JSON object."""
+    payload_bytes = json.dumps(batch_data, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(payload_bytes).hexdigest()
 
 def get_last_hash(filename=FILENAME):
     """Reads previous hash from local file."""

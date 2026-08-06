@@ -22,3 +22,16 @@ changelog
 - config.toml to remove old edge function names and replace with format_data
 - scraper.py to filter pre-existing arrests before upsert
 
+## 2026-08-05
+
+### Added
+- new migrations init to fix missing arrest_agency column and ctx arrest_agency issue
+- new migrations snapshot to collect current inmate snapshot
+- new migrations snapshot to remove identifying columns
+- new migrations snapshot to fix days_left calculation
+- new other_scraper.py to scrape snapshot data
+- new data_validation.md to audit/troubleshoot data integrity issues
+
+### Changed
+- READ.ME to update changes to original design including addition of snapshot
+- scraper.py changed MD5 hash to SHA-256
