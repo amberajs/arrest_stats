@@ -35,3 +35,12 @@ changelog
 ### Changed
 - READ.ME to update changes to original design including addition of snapshot
 - scraper.py changed MD5 hash to SHA-256
+
+## 2026-08-06
+
+### Added
+- new migrations init to insert table values for race_lookup
+- new migrations snapshot to create relation with race_lookup table
+
+### Changed
+- data_validation.md documented data transformation methods and results
