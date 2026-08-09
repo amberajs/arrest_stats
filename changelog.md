@@ -56,3 +56,8 @@ changelog
 
 ### Moved
 - data_validation.md to new data directory
+
+## 2026-08-09
+
+### Changed
+- READ.ME updates on previous push
