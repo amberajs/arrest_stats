@@ -41,6 +41,18 @@ changelog
 ### Added
 - new migrations init to insert table values for race_lookup
 - new migrations snapshot to create relation with race_lookup table
+- new migrations init fixed race_lookup bug from previous add
+- new migrations snapshot fixed race_lookup bug from previous add
 
 ### Changed
 - data_validation.md documented data transformation methods and results
+
+### 2026-08-09
+
+### Added
+- new migrations init fixed race_lookup bug from previous add
+- new migrations snapshot fixed race_lookup bug from previous add
+- data directory for json_agg.sql (export and format static data), jail_snapshot.json (static data file), data_sources.md (population data and sources for snapshot), original sources directory (5 sources)
+
+### Moved
+- data_validation.md to new data directory

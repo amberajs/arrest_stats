@@ -43,3 +43,8 @@ Actual Columns:
 - days_served has a high standard deviation (237 days) and noticable discrepancy between median and mean (167 vs 72)
 - create bins for days_served values: 2 (2 or less), 7 (3-7), 30 (8-30), 180 (31-180), 365 (181-365), year_plus (366+)
 - left numeric days_served to allow regression analysis with days_left (both measured in days)
+
+(in progress) issues with data
+- only one person in the 6 months to 1 year served bin, at exactly 365 days
+- days served bins are listed in order by first digit instead of by amount of time represented (1yr is listed before 7days)
+- all bmi is showing up as unrecorded
